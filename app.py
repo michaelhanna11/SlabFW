@@ -29,9 +29,11 @@ def compute_combinations(G_f, G_c, Q_w, Q_m, stage):
 def load_calculator_module():
     st.header("AS 3610.2 Load Calculator")
     
-    with st.sidebar:
+  with st.sidebar:
         st.subheader("Project Details")
-        st.text_input("Project Name", "My Project")
+        st.text_input("Project Name", key="project_name", placeholder="e.g. Sydney Metro Stage 2")
+        st.text_input("Project Number", key="project_number", placeholder="e.g. P-24123")
+        st.text_input("Section/Zone", key="section_detail", placeholder="e.g. Tunnel Shaft A")
         
         st.subheader("Material Properties")
         thickness = st.number_input("Concrete thickness (m)", 
@@ -81,6 +83,10 @@ def load_calculator_module():
 
     # === Output Results ===
     st.subheader("Results Summary")
+    st.subheader("Project Information")
+    st.markdown(f"**Project Name:** {st.session_state.get('project_name', '-')}")
+    st.markdown(f"**Project Number:** {st.session_state.get('project_number', '-')}")
+    st.markdown(f"**Section/Zone:** {st.session_state.get('section_detail', '-')}")
     cols = st.columns(3)
     cols[0].metric("Concrete Load (G_c)", f"{G_c:.2f} kPa")
     cols[1].metric("Max Design Load", f"{max_load:.2f} kPa")

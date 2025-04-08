@@ -24,7 +24,7 @@ def compute_combinations(G_f, G_c, Q_w, Q_m, stage):
     
     elif stage == "3":  # After concrete placement
         comb_5 = 1.35 * G_f + 1.35 * G_c  # Dead loads
-        comb_6 = 1.2 * G_f + 1.2 * G_c + 1.5 * Q_w  # Workers only (no stacking)
+        comb_6 = 1.2 * G_f + 1.2 * G_c + 1.5 * Q_w + 1.5 * Q_m  # Workers + materials
         combinations = [comb_5, comb_6]
     
     return combinations
@@ -62,7 +62,8 @@ def main():
         st.header("Stage 3: After Concrete Placement")
         Q_w3 = st.number_input("Workers & equipment (kPa) - Stage 3", 
                               min_value=0.5, value=1.0, step=0.1)
-        # No Q_m3 as materials typically removed after placement
+        Q_m3 = st.number_input("Material storage (kPa) - Stage 3", 
+                              min_value=0.0, value=0.5, step=0.1)
     
     # Calculate concrete load
     G_c = calculate_concrete_load(thickness, reinforcement)
@@ -84,8 +85,8 @@ def main():
         "3": {
             "description": "After concrete placement",
             "Q_w": Q_w3,
-            "Q_m": 0.0,  # No materials stored after placement
-            "combinations": compute_combinations(G_f, G_c, Q_w3, 0.0, "3")
+            "Q_m": Q_m3,
+            "combinations": compute_combinations(G_f, G_c, Q_w3, Q_m3, "3")
         }
     }
     
@@ -136,7 +137,7 @@ def get_components_description(stage, G_f, G_c, Q_w, Q_m):
     elif stage == "3":
         return [
             "1.35 × G_f + 1.35 × G_c",
-            "1.2 × G_f + 1.2 × G_c + 1.5 × Q_w"
+            "1.2 × G_f + 1.2 × G_c + 1.5 × Q_w + 1.5 × Q_m"
         ]
 
 if __name__ == "__main__":

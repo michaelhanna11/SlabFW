@@ -38,30 +38,41 @@ def load_calculator_module():
         st.subheader("Material Properties")
         thickness = st.number_input("Concrete thickness (m)", 
                                     min_value=0.05, max_value=1.5, 
-                                    value=0.2, step=0.05)
+                                    value=st.session_state.get("thickness", 0.2), step=0.05)
         reinforcement = st.number_input("Reinforcement percentage (%)", 
                                         min_value=0.0, max_value=5.0, 
-                                        value=1.0, step=0.5)
+                                        value=st.session_state.get("reinforcement", 1.0), step=0.5)
         G_f = st.number_input("Formwork self-weight (kPa)", 
-                              min_value=0.1, value=0.5, step=0.1)
+                              min_value=0.1, value=st.session_state.get("G_f", 0.5), step=0.1)
         
         st.subheader("Stage 1: Before Concrete Placement")
         Q_w1 = st.number_input("Workers & equipment (kPa) - Stage 1", 
-                               min_value=0.5, value=1.0, step=0.1)
+                               min_value=0.5, value=st.session_state.get("Q_w1", 1.0), step=0.1)
         Q_m1 = st.number_input("Material storage (kPa) - Stage 1", 
-                               min_value=0.0, value=0.0, step=0.1)
+                               min_value=0.0, value=st.session_state.get("Q_m1", 0.0), step=0.1)
         
         st.subheader("Stage 2: During Concrete Placement")
         Q_w2 = st.number_input("Workers & equipment (kPa) - Stage 2", 
-                               min_value=0.5, value=2.0, step=0.1)
+                               min_value=0.5, value=st.session_state.get("Q_w2", 2.0), step=0.1)
         Q_m2 = st.number_input("Material storage (kPa) - Stage 2", 
-                               min_value=0.0, value=2.5, step=0.1)
+                               min_value=0.0, value=st.session_state.get("Q_m2", 2.5), step=0.1)
         
         st.subheader("Stage 3: After Concrete Placement")
         Q_w3 = st.number_input("Workers & equipment (kPa) - Stage 3", 
-                               min_value=0.5, value=1.0, step=0.1)
+                               min_value=0.5, value=st.session_state.get("Q_w3", 1.0), step=0.1)
         Q_m3 = st.number_input("Material storage (kPa) - Stage 3", 
-                               min_value=0.0, value=0.0, step=0.1)
+                               min_value=0.0, value=st.session_state.get("Q_m3", 0.0), step=0.1)
+    
+    # === Save inputs to session_state ===
+    st.session_state.thickness = thickness
+    st.session_state.reinforcement = reinforcement
+    st.session_state.G_f = G_f
+    st.session_state.Q_w1 = Q_w1
+    st.session_state.Q_m1 = Q_m1
+    st.session_state.Q_w2 = Q_w2
+    st.session_state.Q_m2 = Q_m2
+    st.session_state.Q_w3 = Q_w3
+    st.session_state.Q_m3 = Q_m3
     
     # === Calculations ===
     G_c = calculate_concrete_load(thickness, reinforcement)
@@ -134,8 +145,8 @@ def calculate_prop_load(max_load, support_type):
 def design_module():
     st.header("PERI Skydeck Formwork Design")
 
-    # User input for floor clear height
-    floor_clear_height = st.number_input("Floor Clear Height (m)", min_value=0.0, max_value=10.0, value=3.0, step=0.1)
+    # Floor clear height input
+    floor_clear_height = st.number_input("Floor Clear Height (m)", min_value=0.5, value=st.session_state.get("floor_clear_height", 3.0), step=0.1)
 
     # Dropdown for selecting Skydeck support type
     support_type = st.selectbox("Select Extra Support Type", [
@@ -144,15 +155,10 @@ def design_module():
         "Mid support under Panel", 
         "Mid support under both Panel and beam"
     ])
-
-    # Check for maximum concrete thickness
-    if 'concrete_thickness' in st.session_state:
-        concrete_thickness = st.session_state.concrete_thickness
-        prop_load_m2, max_thickness = calculate_prop_load(concrete_thickness, support_type)
-
-        if concrete_thickness > max_thickness:
-            st.warning(f"The selected concrete thickness ({concrete_thickness:.2f} m) exceeds the maximum allowed for this support type ({max_thickness:.2f} m).")
     
+    # Save floor clear height to session state
+    st.session_state.floor_clear_height = floor_clear_height
+
     # Calculate the prop load based on the support type and maximum load
     if 'design_load' in st.session_state:  # Ensure we have the maximum load from Module 1
         max_load = st.session_state.design_load

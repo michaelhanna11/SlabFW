@@ -51,7 +51,7 @@ def main():
         Q_w1 = st.number_input("Workers & equipment (kPa) - Stage 1", 
                               min_value=0.5, value=1.0, step=0.1)
         Q_m1 = st.number_input("Material storage (kPa) - Stage 1", 
-                              min_value=0.0, value=0.5, step=0.1)
+                              min_value=0.0, value=0.0, step=0.1)
         
         st.header("Stage 2: During Concrete Placement")
         Q_w2 = st.number_input("Workers & equipment (kPa) - Stage 2", 
@@ -63,7 +63,7 @@ def main():
         Q_w3 = st.number_input("Workers & equipment (kPa) - Stage 3", 
                               min_value=0.5, value=1.0, step=0.1)
         Q_m3 = st.number_input("Material storage (kPa) - Stage 3", 
-                              min_value=0.0, value=0.5, step=0.1)
+                              min_value=0.0, value=0.0, step=0.1)
     
     # Calculate concrete load
     G_c = calculate_concrete_load(thickness, reinforcement)

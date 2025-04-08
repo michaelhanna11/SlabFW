@@ -132,16 +132,18 @@ def module_2():
             st.warning("⚠️ Concrete thickness not available. Please run Module 1 first.")
 
 # -----------------------------
-# App Tabs
+# App Main Function
 # -----------------------------
 def main():
     st.set_page_config(page_title="Formwork App", layout="wide")
     st.title("🧱 Formwork Load & Design Tool")
 
-    tabs = st.tabs(["🔢 Load Calculator", "📐 Design Module"])
-    with tabs[0]:
+    # Radio buttons to select module
+    module = st.radio("Select Module", ("Load Calculator", "Design Module"))
+
+    if module == "Load Calculator":
         module_1()
-    with tabs[1]:
+    elif module == "Design Module":
         module_2()
 
 if __name__ == "__main__":

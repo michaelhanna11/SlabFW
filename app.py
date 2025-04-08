@@ -24,14 +24,14 @@ def compute_combinations(G_f, G_c, Q_w, Q_m, stage):
     
     elif stage == "3":  # After concrete placement
         comb_5 = 1.35 * G_f + 1.35 * G_c  # Dead loads
-        comb_6 = 1.2 * G_f + 1.2 * G_c + 1.5 * Q_w  # Reduced construction loads
+        comb_6 = 1.2 * G_f + 1.2 * G_c + 1.5 * Q_w  # Workers only (no stacking)
         combinations = [comb_5, comb_6]
     
     return combinations
 
 def main():
     st.set_page_config(page_title="Slab Load Calculator", layout="wide")
-    st.title("Simplified Slab Load Calculator")
+    st.title("Slab Load Calculator to AS 3610.2")
     
     with st.sidebar:
         st.header("Project Details")
@@ -47,50 +47,68 @@ def main():
         G_f = st.number_input("Formwork self-weight (kPa)", 
                              min_value=0.1, value=0.5, step=0.1)
         
-        st.header("Construction Loads")
-        Q_w = st.number_input("Workers & equipment (kPa)", 
-                             min_value=0.5, value=1.5, step=0.1)
-        Q_m = st.number_input("Material storage (kPa)", 
-                             min_value=0.0, value=1.0, step=0.1)
+        st.header("Stage 1: Before Concrete Placement")
+        Q_w1 = st.number_input("Workers & equipment (kPa) - Stage 1", 
+                              min_value=0.5, value=1.0, step=0.1)
+        Q_m1 = st.number_input("Material storage (kPa) - Stage 1", 
+                              min_value=0.0, value=0.5, step=0.1)
+        
+        st.header("Stage 2: During Concrete Placement")
+        Q_w2 = st.number_input("Workers & equipment (kPa) - Stage 2", 
+                              min_value=0.5, value=2.0, step=0.1)
+        Q_m2 = st.number_input("Material storage (kPa) - Stage 2", 
+                              min_value=0.0, value=2.5, step=0.1)
+        
+        st.header("Stage 3: After Concrete Placement")
+        Q_w3 = st.number_input("Workers & equipment (kPa) - Stage 3", 
+                              min_value=0.5, value=1.0, step=0.1)
+        # No Q_m3 as materials typically removed after placement
     
     # Calculate concrete load
     G_c = calculate_concrete_load(thickness, reinforcement)
     
     # Calculate load combinations for all stages
-    results = {}
-    stages = {
-        "1": "Prior to concrete placement",
-        "2": "During concrete placement",
-        "3": "After concrete placement"
+    results = {
+        "1": {
+            "description": "Prior to concrete placement",
+            "Q_w": Q_w1,
+            "Q_m": Q_m1,
+            "combinations": compute_combinations(G_f, G_c, Q_w1, Q_m1, "1")
+        },
+        "2": {
+            "description": "During concrete placement",
+            "Q_w": Q_w2,
+            "Q_m": Q_m2,
+            "combinations": compute_combinations(G_f, G_c, Q_w2, Q_m2, "2")
+        },
+        "3": {
+            "description": "After concrete placement",
+            "Q_w": Q_w3,
+            "Q_m": 0.0,  # No materials stored after placement
+            "combinations": compute_combinations(G_f, G_c, Q_w3, 0.0, "3")
+        }
     }
     
-    for stage, desc in stages.items():
-        results[stage] = {
-            "description": desc,
-            "combinations": compute_combinations(G_f, G_c, Q_w, Q_m, stage),
-            "max_load": max(compute_combinations(G_f, G_c, Q_w, Q_m, stage))
-        }
+    # Find maximum load
+    max_load = max(max(stage["combinations"]) for stage in results.values())
+    critical_stage = next(k for k,v in results.items() if max(v["combinations"]) == max_load)
     
     # Display results
-    st.header("Load Combination Results")
-    
-    # Summary metrics
+    st.header("Results Summary")
     col1, col2, col3 = st.columns(3)
     col1.metric("Concrete Load (G_c)", f"{G_c:.2f} kPa")
-    
-    max_load = max(data["max_load"] for data in results.values())
-    critical_stage = next(stage for stage, data in results.items() if data["max_load"] == max_load)
-    
     col2.metric("Maximum Design Load", f"{max_load:.2f} kPa")
     col3.metric("Critical Stage", f"Stage {critical_stage}")
     
-    # Detailed results by stage
+    st.header("Detailed Load Combinations")
     for stage, data in results.items():
-        with st.expander(f"Stage {stage}: {data['description']} (Max = {data['max_load']:.2f} kPa)"):
+        with st.expander(f"Stage {stage}: {data['description']}"):
+            st.caption(f"Workers & equipment: {data['Q_w']} kPa | Material storage: {data['Q_m']} kPa")
+            
             df = pd.DataFrame({
-                "Load Case": [f"Combination {i+1}" for i in range(len(data['combinations']))],
+                "Case": [f"Combination {i+1}" for i in range(len(data['combinations']))],
                 "Load (kPa)": data['combinations'],
-                "Formula": get_load_combination_formula(stage, G_f, G_c, Q_w, Q_m)
+                "Components": get_components_description(stage, G_f, G_c, data['Q_w'], data['Q_m'])
             })
             st.dataframe(df.style.format({"Load (kPa)": "{:.2f}"}), 
                         hide_index=True, 
@@ -99,12 +117,12 @@ def main():
     # Design recommendation
     st.header("Design Recommendation")
     st.success(f"""
-    **Use {max_load:.2f} kPa** (from Stage {critical_stage}) for formwork design.
+    **Design load = {max_load:.2f} kPa** (from Stage {critical_stage})
     """)
-    st.caption("Note: This calculation complies with AS 3610.2 simplified load combinations for vertical loads only.")
+    st.caption("Note: Calculated per AS 3610.2 strength limit state combinations for vertical loads")
 
-def get_load_combination_formula(stage, G_f, G_c, Q_w, Q_m):
-    """Return the formula description for each load combination."""
+def get_components_description(stage, G_f, G_c, Q_w, Q_m):
+    """Return description of load components for each combination."""
     if stage == "1":
         return [
             "1.35 × G_f",

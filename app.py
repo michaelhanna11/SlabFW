@@ -30,10 +30,10 @@ def load_calculator_module():
     st.header("AS 3610.2 Load Calculator")
     
   with st.sidebar:
-        st.subheader("Project Details")
-        st.text_input("Project Name", key="project_name", placeholder="e.g. Sydney Metro Stage 2")
-        st.text_input("Project Number", key="project_number", placeholder="e.g. P-24123")
-        st.text_input("Section/Zone", key="section_detail", placeholder="e.g. Tunnel Shaft A")
+    st.subheader("Project Details")
+    st.text_input("Project Name", key="project_name", placeholder="e.g. Sydney Metro Stage 2")
+    st.text_input("Project Number", key="project_number", placeholder="e.g. P-24123")
+    st.text_input("Section/Zone", key="section_detail", placeholder="e.g. Tunnel Shaft A")
         
         st.subheader("Material Properties")
         thickness = st.number_input("Concrete thickness (m)", 

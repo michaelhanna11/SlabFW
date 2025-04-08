@@ -115,16 +115,21 @@ def calculate_prop_load(max_load, support_type):
     """Calculate the prop load based on the max load and support type for PERI Skydeck in kN."""
     if support_type == "No mid-support used":
         prop_load_m2 = max_load * 1.5 * 2.3
+        max_thickness = 0.43  # Maximum concrete thickness for this option
     elif support_type == "Mid support under beam":
         prop_load_m2 = max_load * 1.5 * 1.15 * 1.25
+        max_thickness = 0.52  # Maximum concrete thickness for this option
     elif support_type == "Mid support under Panel":
         prop_load_m2 = max_load * 0.75 * 2.3
+        max_thickness = 0.90  # Maximum concrete thickness for this option
     elif support_type == "Mid support under both Panel and beam":
         prop_load_m2 = max_load * 0.75 * 1.25 * 1.15 * 1.25
+        max_thickness = 1.09  # Maximum concrete thickness for this option
     else:
         prop_load_m2 = 0.0
+        max_thickness = 0.0
     
-    return prop_load_m2
+    return prop_load_m2, max_thickness
 
 def design_module():
     st.header("PERI Skydeck Formwork Design")
@@ -140,22 +145,30 @@ def design_module():
         "Mid support under both Panel and beam"
     ])
 
+    # Check for maximum concrete thickness
+    if 'concrete_thickness' in st.session_state:
+        concrete_thickness = st.session_state.concrete_thickness
+        prop_load_m2, max_thickness = calculate_prop_load(concrete_thickness, support_type)
+
+        if concrete_thickness > max_thickness:
+            st.warning(f"The selected concrete thickness ({concrete_thickness:.2f} m) exceeds the maximum allowed for this support type ({max_thickness:.2f} m).")
+    
     # Calculate the prop load based on the support type and maximum load
     if 'design_load' in st.session_state:  # Ensure we have the maximum load from Module 1
         max_load = st.session_state.design_load
-        prop_load_m2 = calculate_prop_load(max_load, support_type)
+        prop_load_m2, max_thickness = calculate_prop_load(max_load, support_type)
 
-        # Convert prop load from kN/m² to kN (assuming 1 m² area)
-        prop_load_kn = prop_load_m2 * 1  # Prop load in kN (1 m² area)
-
-        # Calculate the prop load based on floor clear height - 0.41m
+        # Calculate extracted prop load from floor clear height
         extracted_prop_load = floor_clear_height - 0.41
+        
+        # Convert prop load to kN (based on 1 m² area)
+        prop_load_kN = prop_load_m2 * 1  # Assuming 1 m² floor area
 
-        # Display the calculated prop load
+        # Display the results
         st.subheader("Prop Load Calculation")
         st.write(f"**Support Type:** {support_type}")
         st.write(f"**Maximum Load (from Module 1):** {max_load:.2f} kPa")
-        st.write(f"**Prop Load (in kN):** {prop_load_kn:.2f} kN")
+        st.write(f"**Prop Load in kN:** {prop_load_kN:.2f} kN")
         st.write(f"**Extracted Prop Load based on Floor Clear Height - 0.41m:** {extracted_prop_load:.2f} m")
     else:
         st.warning("Please calculate the maximum load first using the Load Calculator module.")

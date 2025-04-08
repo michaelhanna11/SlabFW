@@ -47,13 +47,11 @@ def main():
         G_f = st.number_input("Formwork self-weight (kPa)", 
                              min_value=0.1, value=0.5, step=0.1)
         
-        st.header("Live Loads")
-        Q_w = st.number_input("Construction live load (kPa)", 
-                             min_value=0.5, value=1.5, step=0.1,
-                             help="Workers, equipment, and placement loads")
-        Q_m = st.number_input("Material storage load (kPa)", 
-                             min_value=0.0, value=1.0, step=0.1,
-                             help="Stacked materials on slab during construction")
+        st.header("Construction Loads")
+        Q_w = st.number_input("Workers & equipment (kPa)", 
+                             min_value=0.5, value=1.5, step=0.1)
+        Q_m = st.number_input("Material storage (kPa)", 
+                             min_value=0.0, value=1.0, step=0.1)
     
     # Calculate concrete load
     G_c = calculate_concrete_load(thickness, reinforcement)
@@ -69,42 +67,44 @@ def main():
     for stage, desc in stages.items():
         results[stage] = {
             "description": desc,
-            "combinations": compute_combinations(G_f, G_c, Q_w, Q_m, stage)
+            "combinations": compute_combinations(G_f, G_c, Q_w, Q_m, stage),
+            "max_load": max(compute_combinations(G_f, G_c, Q_w, Q_m, stage))
         }
     
     # Display results
     st.header("Load Combination Results")
     
-    # Summary card
+    # Summary metrics
     col1, col2, col3 = st.columns(3)
     col1.metric("Concrete Load (G_c)", f"{G_c:.2f} kPa")
     
-    max_load = max(max(stage['combinations']) for stage in results.values())
+    max_load = max(data["max_load"] for data in results.values())
+    critical_stage = next(stage for stage, data in results.items() if data["max_load"] == max_load)
+    
     col2.metric("Maximum Design Load", f"{max_load:.2f} kPa")
+    col3.metric("Critical Stage", f"Stage {critical_stage}")
     
-    col3.metric("Critical Stage", 
-               next(stage for stage, data in results.items() 
-                   if max(data['combinations']) == max_load))
-    
-    # Detailed results
+    # Detailed results by stage
     for stage, data in results.items():
-        with st.expander(f"Stage {stage}: {data['description']}"):
+        with st.expander(f"Stage {stage}: {data['description']} (Max = {data['max_load']:.2f} kPa)"):
             df = pd.DataFrame({
                 "Load Case": [f"Combination {i+1}" for i in range(len(data['combinations']))],
                 "Load (kPa)": data['combinations'],
-                "Components": get_components_description(stage, G_f, G_c, Q_w, Q_m)
+                "Formula": get_load_combination_formula(stage, G_f, G_c, Q_w, Q_m)
             })
-            st.dataframe(df, hide_index=True, use_container_width=True)
+            st.dataframe(df.style.format({"Load (kPa)": "{:.2f}"}), 
+                        hide_index=True, 
+                        use_container_width=True)
     
     # Design recommendation
     st.header("Design Recommendation")
-    st.info(f"""
-    The maximum design load is **{max_load:.2f} kPa** (Stage {next(stage for stage, data in results.items() if max(data['combinations']) == max_load)}).
-    Use this value for formwork system design.
+    st.success(f"""
+    **Use {max_load:.2f} kPa** (from Stage {critical_stage}) for formwork design.
     """)
+    st.caption("Note: This calculation complies with AS 3610.2 simplified load combinations for vertical loads only.")
 
-def get_components_description(stage, G_f, G_c, Q_w, Q_m):
-    """Return description of load components for each combination."""
+def get_load_combination_formula(stage, G_f, G_c, Q_w, Q_m):
+    """Return the formula description for each load combination."""
     if stage == "1":
         return [
             "1.35 × G_f",

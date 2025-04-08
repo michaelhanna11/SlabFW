@@ -9,22 +9,23 @@ def calculate_concrete_load(thickness, reinforcement_percentage):
     return G_c
 
 def compute_combinations(G_f, G_c, Q_w, Q_m, stage):
-    """Compute simplified load combinations for slab formwork design."""
+    """Compute load combinations with unanticipated load factor (γ_d = 1.3)"""
     combinations = []
+    gamma_d = 1.3  # Unanticipated load factor
     
     if stage == "1":  # Prior to concrete placement
-        comb_1 = 1.35 * G_f  # Dead load only
-        comb_2 = 1.2 * G_f + 1.5 * Q_w + 1.5 * Q_m  # Construction loads
+        comb_1 = 1.35 * G_f  # Dead load only (no γ_d)
+        comb_2 = gamma_d * (1.2 * G_f + 1.5 * Q_w + 1.5 * Q_m)  # Construction loads
         combinations = [comb_1, comb_2]
     
     elif stage == "2":  # During concrete placement
-        comb_3 = 1.35 * G_f + 1.35 * G_c  # Dead loads
-        comb_4 = 1.2 * G_f + 1.2 * G_c + 1.5 * Q_w + 1.5 * Q_m  # All loads
+        comb_3 = gamma_d * (1.35 * G_f + 1.35 * G_c)  # Dead loads
+        comb_4 = gamma_d * (1.2 * G_f + 1.2 * G_c + 1.5 * Q_w + 1.5 * Q_m)  # All loads
         combinations = [comb_3, comb_4]
     
     elif stage == "3":  # After concrete placement
-        comb_5 = 1.35 * G_f + 1.35 * G_c  # Dead loads
-        comb_6 = 1.2 * G_f + 1.2 * G_c + 1.5 * Q_w + 1.5 * Q_m  # Workers + materials
+        comb_5 = gamma_d * (1.35 * G_f + 1.35 * G_c)  # Dead loads
+        comb_6 = gamma_d * (1.2 * G_f + 1.2 * G_c + 1.5 * Q_w + 1.5 * Q_m)  # Workers + materials
         combinations = [comb_5, comb_6]
     
     return combinations
@@ -39,7 +40,7 @@ def main():
         
         st.header("Material Properties")
         thickness = st.number_input("Concrete thickness (m)", 
-                                  min_value=0.1, max_value=1.5, 
+                                  min_value=0.05, max_value=1.5, 
                                   value=0.2, step=0.05)
         reinforcement = st.number_input("Reinforcement percentage (%)", 
                                       min_value=0.0, max_value=5.0, 
@@ -120,24 +121,24 @@ def main():
     st.success(f"""
     **Design load = {max_load:.2f} kPa** (from Stage {critical_stage})
     """)
-    st.caption("Note: Calculated per AS 3610.2 strength limit state combinations for vertical loads")
+    st.caption("Note: Includes 1.3 safety factor (γ_d) for all combinations except first dead load case")
 
 def get_components_description(stage, G_f, G_c, Q_w, Q_m):
     """Return description of load components for each combination."""
     if stage == "1":
         return [
-            "1.35 × G_f",
-            "1.2 × G_f + 1.5 × Q_w + 1.5 × Q_m"
+            "1.35 × G_f (No γ_d)",
+            "γ_d × (1.2 × G_f + 1.5 × Q_w + 1.5 × Q_m)"
         ]
     elif stage == "2":
         return [
-            "1.35 × G_f + 1.35 × G_c",
-            "1.2 × G_f + 1.2 × G_c + 1.5 × Q_w + 1.5 × Q_m"
+            "γ_d × (1.35 × G_f + 1.35 × G_c)",
+            "γ_d × (1.2 × G_f + 1.2 × G_c + 1.5 × Q_w + 1.5 × Q_m)"
         ]
     elif stage == "3":
         return [
-            "1.35 × G_f + 1.35 × G_c",
-            "1.2 × G_f + 1.2 × G_c + 1.5 × Q_w + 1.5 × Q_m"
+            "γ_d × (1.35 × G_f + 1.35 × G_c)",
+            "γ_d × (1.2 × G_f + 1.2 × G_c + 1.5 × Q_w + 1.5 × Q_m)"
         ]
 
 if __name__ == "__main__":

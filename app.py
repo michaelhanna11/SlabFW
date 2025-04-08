@@ -3,7 +3,7 @@ import pandas as pd
 
 def calculate_concrete_load(thickness, reinforcement_percentage):
     """Calculate G_c in kN/m² based on concrete thickness and reinforcement percentage."""
-    base_density = 24  # kN/m³
+    base_density = 24.50  # kN/m³
     reinforcement_load = 0.5 * reinforcement_percentage  # kN/m²
     G_c = base_density * thickness + reinforcement_load * thickness
     return G_c

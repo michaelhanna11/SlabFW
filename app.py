@@ -127,6 +127,9 @@ def calculate_prop_load(max_load, support_type):
 def design_module():
     st.header("PERI Skydeck Formwork Design")
 
+    # User input for floor clear height
+    floor_clear_height = st.number_input("Floor Clear Height (m)", min_value=0.0, max_value=10.0, value=3.0, step=0.1)
+
     # Dropdown for selecting Skydeck support type
     support_type = st.selectbox("Select Extra Support Type", [
         "No mid-support used", 
@@ -139,12 +142,16 @@ def design_module():
     if 'design_load' in st.session_state:  # Ensure we have the maximum load from Module 1
         max_load = st.session_state.design_load
         prop_load = calculate_prop_load(max_load, support_type)
+        
+        # Calculate the prop load based on floor clear height - 0.41m
+        extracted_prop_load = floor_clear_height - 0.41
 
         # Display the calculated prop load
         st.subheader("Prop Load Calculation")
         st.write(f"**Support Type:** {support_type}")
         st.write(f"**Maximum Load (from Module 1):** {max_load:.2f} kPa")
         st.write(f"**Prop Load:** {prop_load:.2f} kN/m²")
+        st.write(f"**Extracted Prop Load based on Floor Clear Height - 0.41m:** {extracted_prop_load:.2f} m")
     else:
         st.warning("Please calculate the maximum load first using the Load Calculator module.")
 
